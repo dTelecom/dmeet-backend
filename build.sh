@@ -1,6 +1,6 @@
 #!/bin/bash
 
-rm main;
+rm dmeet-backend;
 mkdir gopath;
 
 PROJECT=$(pwd);
@@ -17,5 +17,5 @@ fi;
 export GOPATH=$PROJECT":"$PROJECT"/gopath:";
 
 gofmt -s -w . && $GOLINT ./... && go vet && go build;
-mv main ../;
+mv main ../dmeet-backend;
 cd ../;
