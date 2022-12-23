@@ -20,10 +20,11 @@ type Participant struct {
 
 // ParticipantView model
 type ParticipantView struct {
-	Name  string `json:"name"`
-	UID   string `json:"uid"`
-	SID   string `json:"sid"`
-	Title string `json:"title"`
+	Name   string `json:"name"`
+	UID    string `json:"uid"`
+	SID    string `json:"sid"`
+	Title  string `json:"title"`
+	CallID string `json:"callID"`
 }
 
 // Room model
@@ -51,6 +52,7 @@ type Token struct {
 	IsHost  bool   `json:"isHost"`
 	Account string `json:"account"`
 	URL     string `json:"url"`
+	CallID  string `json:"callID"`
 }
 
 // TokenView model
@@ -76,7 +78,6 @@ func createRoom(db *gorm.DB) func(echo.Context) error {
 
 		SID := shortuuid.New()
 		UID := shortuuid.New()
-		callID := shortuuid.New()
 		key := generateKey()
 
 		url, err := getNodeURL()
@@ -91,6 +92,7 @@ func createRoom(db *gorm.DB) func(echo.Context) error {
 			IsHost:  true,
 			Account: os.Getenv("NEAR_ACCOUNT"),
 			URL:     os.Getenv("CALLBACK_URL"),
+			CallID:  participantView.CallID,
 		}
 
 		tokenString, signature, err := getTokenSignature(token)
@@ -100,7 +102,7 @@ func createRoom(db *gorm.DB) func(echo.Context) error {
 
 		room := &Room{
 			SID:     SID,
-			CallID:  callID,
+			CallID:  participantView.CallID,
 			Key:     key,
 			Title:   participantView.Title,
 			HostUID: UID,
@@ -162,6 +164,7 @@ func joinRoom(db *gorm.DB) func(echo.Context) error {
 			IsHost:  false,
 			Account: os.Getenv("NEAR_ACCOUNT"),
 			URL:     os.Getenv("CALLBACK_URL"),
+			CallID:  room.CallID,
 		}
 
 		tokenString, signature, err := getTokenSignature(token)
