@@ -6,6 +6,7 @@ import (
 	"github.com/lithammer/shortuuid/v4"
 	"github.com/rs/zerolog/log"
 	"net/http"
+	"os"
 )
 
 // Participant model
@@ -44,10 +45,12 @@ type RoomView struct {
 
 // Token model
 type Token struct {
-	SID    string `json:"sid"`
-	UID    string `json:"uid"`
-	Name   string `json:"name"`
-	IsHost bool   `json:"isHost"`
+	SID     string `json:"sid"`
+	UID     string `json:"uid"`
+	Name    string `json:"name"`
+	IsHost  bool   `json:"isHost"`
+	Account string `json:"account"`
+	URL     string `json:"url"`
 }
 
 // TokenView model
@@ -82,9 +85,12 @@ func createRoom(db *gorm.DB) func(echo.Context) error {
 		}
 
 		token := &Token{
-			SID:  SID,
-			UID:  UID,
-			Name: participantView.Name,
+			SID:     SID,
+			UID:     UID,
+			Name:    participantView.Name,
+			IsHost:  true,
+			Account: os.Getenv("NEAR_ACCOUNT"),
+			URL:     os.Getenv("CALLBACK_URL"),
 		}
 
 		tokenString, signature, err := getTokenSignature(token)
@@ -150,9 +156,12 @@ func joinRoom(db *gorm.DB) func(echo.Context) error {
 		}
 
 		token := &Token{
-			SID:  participantView.SID,
-			UID:  UID,
-			Name: participantView.Name,
+			SID:     participantView.SID,
+			UID:     UID,
+			Name:    participantView.Name,
+			IsHost:  false,
+			Account: os.Getenv("NEAR_ACCOUNT"),
+			URL:     os.Getenv("CALLBACK_URL"),
 		}
 
 		tokenString, signature, err := getTokenSignature(token)
