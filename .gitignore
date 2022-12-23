@@ -6,5 +6,5 @@ sqlite3gorm.db
 .DS_store
 .env
 dmeet-backend
-.exp
+*.exp
 deploy.sh
