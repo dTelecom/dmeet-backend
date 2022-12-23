@@ -11,16 +11,18 @@ import (
 // Participant model
 type Participant struct {
 	gorm.Model
-	Name string
-	UID  string
-	SID  string
+	Name   string
+	UID    string
+	SID    string
+	IsHost bool
 }
 
 // ParticipantView model
 type ParticipantView struct {
-	Name string `json:"name"`
-	UID  string `json:"uid"`
-	SID  string `json:"sid"`
+	Name  string `json:"name"`
+	UID   string `json:"uid"`
+	SID   string `json:"sid"`
+	Title string `json:"title"`
 }
 
 // Room model
@@ -29,14 +31,33 @@ type Room struct {
 	SID      string
 	CallID   string
 	Password string
+	Title    string
+	HostUID  string
 }
 
 // RoomView model
 type RoomView struct {
-	SID      string `json:"sid"`
-	UID      string `json:"uid"`
-	URL      string `json:"url"`
-	Password string `json:"password"`
+	Title    string `json:"title"`
+	HostName string `json:"hostName"`
+	Count    int    `json:"count"`
+}
+
+// Token model
+type Token struct {
+	SID    string `json:"sid"`
+	UID    string `json:"uid"`
+	Name   string `json:"name"`
+	IsHost bool   `json:"isHost"`
+}
+
+// TokenView model
+type TokenView struct {
+	Token     string `json:"token"`
+	Signature string `json:"signature"`
+	URL       string `json:"url"`
+	SID       string `json:"sid"`
+	UID       string `json:"uid"`
+	Password  string `json:"password"`
 }
 
 func createRoom(db *gorm.DB) func(echo.Context) error {
@@ -60,28 +81,44 @@ func createRoom(db *gorm.DB) func(echo.Context) error {
 			return c.String(http.StatusBadRequest, "bad request")
 		}
 
+		token := &Token{
+			SID:  SID,
+			UID:  UID,
+			Name: participantView.Name,
+		}
+
+		tokenString, signature, err := getTokenSignature(token)
+		if err != nil {
+			return c.String(http.StatusBadRequest, "bad request")
+		}
+
 		room := &Room{
 			SID:      SID,
 			CallID:   callID,
 			Password: password,
+			Title:    participantView.Title,
+			HostUID:  UID,
 		}
 		db.Create(&room)
 
 		participant := &Participant{
-			Name: participantView.Name,
-			SID:  SID,
-			UID:  UID,
+			Name:   participantView.Name,
+			SID:    SID,
+			UID:    UID,
+			IsHost: true,
 		}
 		db.Create(&participant)
 
-		roomView := &RoomView{
-			SID:      SID,
-			UID:      UID,
-			URL:      url,
-			Password: password,
+		tokenView := &TokenView{
+			Token:     tokenString,
+			Signature: signature,
+			URL:       url,
+			SID:       SID,
+			UID:       UID,
+			Password:  password,
 		}
 
-		return c.JSON(http.StatusOK, roomView)
+		return c.JSON(http.StatusOK, tokenView)
 	}
 }
 
@@ -112,20 +149,76 @@ func joinRoom(db *gorm.DB) func(echo.Context) error {
 			return c.String(http.StatusBadRequest, "bad request")
 		}
 
-		participant := &Participant{
-			Name: participantView.Name,
+		token := &Token{
 			SID:  participantView.SID,
 			UID:  UID,
+			Name: participantView.Name,
+		}
+
+		tokenString, signature, err := getTokenSignature(token)
+		if err != nil {
+			return c.String(http.StatusBadRequest, "bad request")
+		}
+
+		participant := &Participant{
+			Name:   participantView.Name,
+			SID:    participantView.SID,
+			UID:    UID,
+			IsHost: false,
 		}
 		db.Create(&participant)
 
+		tokenView := &TokenView{
+			Token:     tokenString,
+			Signature: signature,
+			URL:       url,
+			SID:       participantView.SID,
+			UID:       UID,
+			Password:  room.Password,
+		}
+
+		return c.JSON(http.StatusOK, tokenView)
+	}
+}
+
+func infoRoom(db *gorm.DB) func(echo.Context) error {
+	return func(c echo.Context) error {
+		var participantView ParticipantView
+		err := c.Bind(&participantView)
+		if err != nil {
+			return c.String(http.StatusBadRequest, err.Error())
+		}
+
+		log.Printf("joinRoom: %v", participantView)
+
+		if participantView.SID == "" {
+			return c.String(http.StatusBadRequest, "SID required")
+		}
+
+		var room Room
+		db.Where("s_id=?", participantView.SID).First(&room)
+		if room.SID != participantView.SID {
+			return c.String(http.StatusNotFound, "")
+		}
+
+		var participants []Participant
+		db.Where("s_id=?", room.SID).Find(&participants)
+
+		var host Participant
+		db.Where("uid=?", room.HostUID).First(&host)
+
 		roomView := &RoomView{
-			SID:      participantView.SID,
-			UID:      UID,
-			URL:      url,
-			Password: room.Password,
+			Title:    room.Title,
+			Count:    len(participants),
+			HostName: host.Name,
 		}
 
 		return c.JSON(http.StatusOK, roomView)
+	}
+}
+
+func callbackRoom(db *gorm.DB) func(echo.Context) error {
+	return func(c echo.Context) error {
+		return c.JSON(http.StatusOK, "")
 	}
 }

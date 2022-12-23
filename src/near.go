@@ -28,10 +28,6 @@ type GetNodesResult struct {
 func getNodeURL() (string, error) {
 
 	node := ""
-	keyPair, err := key.NewBase58KeyPair(os.Getenv("NEAR_PK"))
-	if err != nil {
-		return node, fmt.Errorf("key error: %w", err)
-	}
 
 	network, ok := config.Networks["mainnet"]
 	if !ok {
@@ -43,9 +39,7 @@ func getNodeURL() (string, error) {
 		return node, fmt.Errorf("failed to create rpc client: %w", err)
 	}
 
-	ctx := client.ContextWithKeyPair(context.Background(), keyPair)
-
-	res, err := rpc.ContractViewCallFunction(ctx, "webrtc.dtelecom.near", "get_nodes", base64.StdEncoding.EncodeToString([]byte("")), block.FinalityFinal())
+	res, err := rpc.ContractViewCallFunction(context.Background(), "webrtc.dtelecom.near", "get_nodes", base64.StdEncoding.EncodeToString([]byte("")), block.FinalityFinal())
 	if err != nil {
 		return node, fmt.Errorf("failed to view get_nodes: %w", err)
 	}
@@ -59,4 +53,20 @@ func getNodeURL() (string, error) {
 
 	randomIndex := rand.Intn(len(getNodesResult))
 	return getNodesResult[randomIndex].Address, nil
+}
+
+func getTokenSignature(token *Token) (string, string, error) {
+
+	keyPair, err := key.NewBase58KeyPair(os.Getenv("NEAR_PK"))
+	if err != nil {
+		return "", "", err
+	}
+
+	json, err := json.Marshal(token)
+	if err != nil {
+		return "", "", err
+	}
+
+	sig := keyPair.Sign(json)
+	return base64.StdEncoding.EncodeToString(json), base64.StdEncoding.EncodeToString(sig.Value()), nil
 }
