@@ -4,7 +4,7 @@ import (
 	"math/rand"
 )
 
-func generatePassword() string {
+func generateKey() string {
 	const charset = "abcdefghijklmnopqrstuvwxyz" +
 		"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 

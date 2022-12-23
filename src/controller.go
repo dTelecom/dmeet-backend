@@ -28,11 +28,11 @@ type ParticipantView struct {
 // Room model
 type Room struct {
 	gorm.Model
-	SID      string
-	CallID   string
-	Password string
-	Title    string
-	HostUID  string
+	SID     string
+	CallID  string
+	Key     string
+	Title   string
+	HostUID string
 }
 
 // RoomView model
@@ -57,7 +57,7 @@ type TokenView struct {
 	URL       string `json:"url"`
 	SID       string `json:"sid"`
 	UID       string `json:"uid"`
-	Password  string `json:"password"`
+	Key       string `json:"key"`
 }
 
 func createRoom(db *gorm.DB) func(echo.Context) error {
@@ -74,7 +74,7 @@ func createRoom(db *gorm.DB) func(echo.Context) error {
 		SID := shortuuid.New()
 		UID := shortuuid.New()
 		callID := shortuuid.New()
-		password := generatePassword()
+		key := generateKey()
 
 		url, err := getNodeURL()
 		if err != nil {
@@ -93,11 +93,11 @@ func createRoom(db *gorm.DB) func(echo.Context) error {
 		}
 
 		room := &Room{
-			SID:      SID,
-			CallID:   callID,
-			Password: password,
-			Title:    participantView.Title,
-			HostUID:  UID,
+			SID:     SID,
+			CallID:  callID,
+			Key:     key,
+			Title:   participantView.Title,
+			HostUID: UID,
 		}
 		db.Create(&room)
 
@@ -115,7 +115,7 @@ func createRoom(db *gorm.DB) func(echo.Context) error {
 			URL:       url,
 			SID:       SID,
 			UID:       UID,
-			Password:  password,
+			Key:       key,
 		}
 
 		return c.JSON(http.StatusOK, tokenView)
@@ -174,7 +174,7 @@ func joinRoom(db *gorm.DB) func(echo.Context) error {
 			URL:       url,
 			SID:       participantView.SID,
 			UID:       UID,
-			Password:  room.Password,
+			Key:       room.Key,
 		}
 
 		return c.JSON(http.StatusOK, tokenView)
