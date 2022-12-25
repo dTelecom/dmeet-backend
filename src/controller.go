@@ -25,6 +25,7 @@ type ParticipantView struct {
 	SID    string `json:"sid"`
 	Title  string `json:"title"`
 	CallID string `json:"callID"`
+	E2EE   bool   `json:"e2ee"`
 }
 
 // Room model
@@ -35,6 +36,7 @@ type Room struct {
 	Key     string
 	Title   string
 	HostUID string
+	E2EE    bool
 }
 
 // RoomView model
@@ -42,6 +44,7 @@ type RoomView struct {
 	Title    string `json:"title"`
 	HostName string `json:"hostName"`
 	Count    int    `json:"count"`
+	E2EE     bool   `json:"e2ee"`
 }
 
 // Token model
@@ -106,6 +109,7 @@ func createRoom(db *gorm.DB) func(echo.Context) error {
 			Key:     key,
 			Title:   participantView.Title,
 			HostUID: UID,
+			E2EE:    participantView.E2EE,
 		}
 		db.Create(&room)
 
@@ -223,6 +227,7 @@ func infoRoom(db *gorm.DB) func(echo.Context) error {
 			Title:    room.Title,
 			Count:    len(participants),
 			HostName: host.Name,
+			E2EE:     room.E2EE,
 		}
 
 		return c.JSON(http.StatusOK, roomView)
