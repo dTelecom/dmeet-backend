@@ -20,31 +20,37 @@ type Participant struct {
 
 // ParticipantView model
 type ParticipantView struct {
-	Name   string `json:"name"`
-	UID    string `json:"uid"`
-	SID    string `json:"sid"`
-	Title  string `json:"title"`
-	CallID string `json:"callID"`
-	E2EE   bool   `json:"e2ee"`
+	Name             string `json:"name"`
+	UID              string `json:"uid"`
+	SID              string `json:"sid"`
+	Title            string `json:"title"`
+	CallID           string `json:"callID"`
+	E2EE             bool   `json:"e2ee"`
+	ViewerPrice      string `json:"viewerPrice"`
+	ParticipantPrice string `json:"participantPrice"`
 }
 
 // Room model
 type Room struct {
 	gorm.Model
-	SID     string
-	CallID  string
-	Key     string
-	Title   string
-	HostUID string
-	E2EE    bool
+	SID              string
+	CallID           string
+	Key              string
+	Title            string
+	HostUID          string
+	E2EE             bool
+	ViewerPrice      string
+	ParticipantPrice string
 }
 
 // RoomView model
 type RoomView struct {
-	Title    string `json:"title"`
-	HostName string `json:"hostName"`
-	Count    int    `json:"count"`
-	E2EE     bool   `json:"e2ee"`
+	Title            string `json:"title"`
+	HostName         string `json:"hostName"`
+	Count            int    `json:"count"`
+	E2EE             bool   `json:"e2ee"`
+	ViewerPrice      string `json:"viewerPrice"`
+	ParticipantPrice string `json:"participantPrice"`
 }
 
 // Token model
@@ -104,12 +110,14 @@ func createRoom(db *gorm.DB) func(echo.Context) error {
 		}
 
 		room := &Room{
-			SID:     SID,
-			CallID:  participantView.CallID,
-			Key:     key,
-			Title:   participantView.Title,
-			HostUID: UID,
-			E2EE:    participantView.E2EE,
+			SID:              SID,
+			CallID:           participantView.CallID,
+			Key:              key,
+			Title:            participantView.Title,
+			HostUID:          UID,
+			E2EE:             participantView.E2EE,
+			ViewerPrice:      participantView.ViewerPrice,
+			ParticipantPrice: participantView.ParticipantPrice,
 		}
 		db.Create(&room)
 
@@ -224,10 +232,12 @@ func infoRoom(db *gorm.DB) func(echo.Context) error {
 		db.Where("uid=?", room.HostUID).First(&host)
 
 		roomView := &RoomView{
-			Title:    room.Title,
-			Count:    len(participants),
-			HostName: host.Name,
-			E2EE:     room.E2EE,
+			Title:            room.Title,
+			Count:            len(participants),
+			HostName:         host.Name,
+			E2EE:             room.E2EE,
+			ViewerPrice:      room.ViewerPrice,
+			ParticipantPrice: room.ParticipantPrice,
 		}
 
 		return c.JSON(http.StatusOK, roomView)
