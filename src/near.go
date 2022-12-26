@@ -20,9 +20,7 @@ type ViewResult struct {
 
 // GetNodesResult data
 type GetNodesResult struct {
-	Address      string `json:"address"`
-	StakedAmount int64  `json:"staked_amount"`
-	LockedAmount int    `json:"locked_amount"`
+	Address string `json:"address"`
 }
 
 func getNodeURL() (string, error) {
