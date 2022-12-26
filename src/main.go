@@ -28,7 +28,7 @@ func handleRequest(db *gorm.DB) {
 
 func initialMigration(db *gorm.DB) {
 
-	db.AutoMigrate(&Participant{}, &Room{}, &Email{})
+	db.AutoMigrate(&Participant{}, &Room{}, &Email{}, &Call{})
 }
 
 func main() {

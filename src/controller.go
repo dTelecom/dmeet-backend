@@ -24,7 +24,6 @@ type RoomRequest struct {
 	UID              string `json:"uid"`
 	SID              string `json:"sid"`
 	Title            string `json:"title"`
-	CallID           string `json:"callID"`
 	E2EE             bool   `json:"e2ee"`
 	ViewerPrice      string `json:"viewerPrice"`
 	ParticipantPrice string `json:"participantPrice"`
@@ -35,7 +34,6 @@ type RoomRequest struct {
 type Room struct {
 	gorm.Model
 	SID              string
-	CallID           string
 	Key              string
 	Title            string
 	HostUID          string
@@ -76,6 +74,34 @@ type TokenView struct {
 	Key       string `json:"key"`
 }
 
+//NotifyData data
+type NotifyData struct {
+	Duration int    `json:"duration"`
+	SID      string `json:"sid"`
+	UID      string `json:"uid"`
+	Type     string `json:"type"`
+}
+
+//NotifyRequest data
+type NotifyRequest struct {
+	Data      []byte `json:"data"`
+	Signature []byte `json:"signature"`
+}
+
+//NotifyResponse data
+type NotifyResponse struct {
+	Epoch     uint64 `json:"epoch"`
+	Signature []byte `json:"signature"`
+}
+
+// Call model
+type Call struct {
+	gorm.Model
+	SID    string
+	CallID string
+	NodeID string
+}
+
 func createRoom(db *gorm.DB) func(echo.Context) error {
 	return func(c echo.Context) error {
 
@@ -89,9 +115,10 @@ func createRoom(db *gorm.DB) func(echo.Context) error {
 
 		SID := shortuuid.New()
 		UID := shortuuid.New()
+		CallID := shortuuid.New()
 		key := generateKey()
 
-		url, err := getNodeURL()
+		url, nodeID, err := getNodeURL()
 		if err != nil {
 			return c.String(http.StatusBadRequest, err.Error())
 		}
@@ -103,7 +130,7 @@ func createRoom(db *gorm.DB) func(echo.Context) error {
 			IsHost:    true,
 			Account:   os.Getenv("NEAR_ACCOUNT"),
 			URL:       os.Getenv("CALLBACK_URL"),
-			CallID:    roomRequest.CallID,
+			CallID:    CallID,
 			NoPublish: false,
 		}
 
@@ -114,7 +141,6 @@ func createRoom(db *gorm.DB) func(echo.Context) error {
 
 		room := &Room{
 			SID:              SID,
-			CallID:           roomRequest.CallID,
 			Key:              key,
 			Title:            roomRequest.Title,
 			HostUID:          UID,
@@ -123,6 +149,13 @@ func createRoom(db *gorm.DB) func(echo.Context) error {
 			ParticipantPrice: roomRequest.ParticipantPrice,
 		}
 		db.Create(&room)
+
+		call := &Call{
+			SID:    SID,
+			CallID: CallID,
+			NodeID: nodeID,
+		}
+		db.Create(&call)
 
 		participant := &Participant{
 			Name:   roomRequest.Name,
@@ -166,11 +199,22 @@ func joinRoom(db *gorm.DB) func(echo.Context) error {
 			return c.String(http.StatusNotFound, "")
 		}
 
-		UID := shortuuid.New()
-		url, err := getNodeURL()
+		url, nodeID, err := getNodeURL()
 		if err != nil {
 			return c.String(http.StatusBadRequest, err.Error())
 		}
+
+		var call Call
+		db.Where("s_id=? AND node_id=?", roomRequest.SID, nodeID).First(&call)
+		if call.SID != roomRequest.SID {
+			call = Call{
+				SID:    roomRequest.SID,
+				CallID: shortuuid.New(),
+				NodeID: nodeID,
+			}
+		}
+
+		UID := shortuuid.New()
 
 		token := &Token{
 			SID:       roomRequest.SID,
@@ -179,7 +223,7 @@ func joinRoom(db *gorm.DB) func(echo.Context) error {
 			IsHost:    false,
 			Account:   os.Getenv("NEAR_ACCOUNT"),
 			URL:       os.Getenv("CALLBACK_URL"),
-			CallID:    room.CallID,
+			CallID:    call.CallID,
 			NoPublish: roomRequest.NoPublish,
 		}
 
@@ -250,6 +294,27 @@ func infoRoom(db *gorm.DB) func(echo.Context) error {
 
 func callbackRoom(db *gorm.DB) func(echo.Context) error {
 	return func(c echo.Context) error {
-		return c.JSON(http.StatusOK, "")
+		var notifyRequest NotifyRequest
+		err := c.Bind(&notifyRequest)
+		if err != nil {
+			return c.String(http.StatusBadRequest, err.Error())
+		}
+
+		log.Printf("callbackRoom: %v", notifyRequest)
+
+		// var room Room
+		// db.Where("s_id=?", notifyData.SID).First(&room)
+		// if room.SID != notifyData.SID {
+		// 	return c.String(http.StatusNotFound, "")
+		// }
+
+		// if notifyData.Type == "join" {
+		// 	var participant Participant
+		// 	db.Where("uid=?", notifyData.UID).First(&participant)
+		// 	if participant.UID != notifyData.UID {
+		// 		return c.String(http.StatusNotFound, "")
+		// 	}
+		// }
+		return c.String(http.StatusNotFound, "")
 	}
 }
