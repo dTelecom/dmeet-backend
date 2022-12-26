@@ -18,8 +18,8 @@ type Participant struct {
 	IsHost bool
 }
 
-// ParticipantView model
-type ParticipantView struct {
+// RoomRequest model
+type RoomRequest struct {
 	Name             string `json:"name"`
 	UID              string `json:"uid"`
 	SID              string `json:"sid"`
@@ -77,13 +77,13 @@ type TokenView struct {
 func createRoom(db *gorm.DB) func(echo.Context) error {
 	return func(c echo.Context) error {
 
-		var participantView ParticipantView
-		err := c.Bind(&participantView)
+		var roomRequest RoomRequest
+		err := c.Bind(&roomRequest)
 		if err != nil {
 			return c.String(http.StatusBadRequest, "bad request")
 		}
 
-		log.Printf("createRoom: %v", participantView)
+		log.Printf("createRoom: %v", roomRequest)
 
 		SID := shortuuid.New()
 		UID := shortuuid.New()
@@ -97,11 +97,11 @@ func createRoom(db *gorm.DB) func(echo.Context) error {
 		token := &Token{
 			SID:     SID,
 			UID:     UID,
-			Name:    participantView.Name,
+			Name:    roomRequest.Name,
 			IsHost:  true,
 			Account: os.Getenv("NEAR_ACCOUNT"),
 			URL:     os.Getenv("CALLBACK_URL"),
-			CallID:  participantView.CallID,
+			CallID:  roomRequest.CallID,
 		}
 
 		tokenString, signature, err := getTokenSignature(token)
@@ -111,18 +111,18 @@ func createRoom(db *gorm.DB) func(echo.Context) error {
 
 		room := &Room{
 			SID:              SID,
-			CallID:           participantView.CallID,
+			CallID:           roomRequest.CallID,
 			Key:              key,
-			Title:            participantView.Title,
+			Title:            roomRequest.Title,
 			HostUID:          UID,
-			E2EE:             participantView.E2EE,
-			ViewerPrice:      participantView.ViewerPrice,
-			ParticipantPrice: participantView.ParticipantPrice,
+			E2EE:             roomRequest.E2EE,
+			ViewerPrice:      roomRequest.ViewerPrice,
+			ParticipantPrice: roomRequest.ParticipantPrice,
 		}
 		db.Create(&room)
 
 		participant := &Participant{
-			Name:   participantView.Name,
+			Name:   roomRequest.Name,
 			SID:    SID,
 			UID:    UID,
 			IsHost: true,
@@ -145,21 +145,21 @@ func createRoom(db *gorm.DB) func(echo.Context) error {
 func joinRoom(db *gorm.DB) func(echo.Context) error {
 	return func(c echo.Context) error {
 
-		var participantView ParticipantView
-		err := c.Bind(&participantView)
+		var roomRequest RoomRequest
+		err := c.Bind(&roomRequest)
 		if err != nil {
 			return c.String(http.StatusBadRequest, err.Error())
 		}
 
-		log.Printf("joinRoom: %v", participantView)
+		log.Printf("joinRoom: %v", roomRequest)
 
-		if participantView.SID == "" {
+		if roomRequest.SID == "" {
 			return c.String(http.StatusBadRequest, "SID required")
 		}
 
 		var room Room
-		db.Where("s_id=?", participantView.SID).First(&room)
-		if room.SID != participantView.SID {
+		db.Where("s_id=?", roomRequest.SID).First(&room)
+		if room.SID != roomRequest.SID {
 			return c.String(http.StatusNotFound, "")
 		}
 
@@ -170,9 +170,9 @@ func joinRoom(db *gorm.DB) func(echo.Context) error {
 		}
 
 		token := &Token{
-			SID:     participantView.SID,
+			SID:     roomRequest.SID,
 			UID:     UID,
-			Name:    participantView.Name,
+			Name:    roomRequest.Name,
 			IsHost:  false,
 			Account: os.Getenv("NEAR_ACCOUNT"),
 			URL:     os.Getenv("CALLBACK_URL"),
@@ -185,8 +185,8 @@ func joinRoom(db *gorm.DB) func(echo.Context) error {
 		}
 
 		participant := &Participant{
-			Name:   participantView.Name,
-			SID:    participantView.SID,
+			Name:   roomRequest.Name,
+			SID:    roomRequest.SID,
 			UID:    UID,
 			IsHost: false,
 		}
@@ -196,7 +196,7 @@ func joinRoom(db *gorm.DB) func(echo.Context) error {
 			Token:     tokenString,
 			Signature: signature,
 			URL:       url,
-			SID:       participantView.SID,
+			SID:       roomRequest.SID,
 			UID:       UID,
 			Key:       room.Key,
 		}
@@ -207,21 +207,21 @@ func joinRoom(db *gorm.DB) func(echo.Context) error {
 
 func infoRoom(db *gorm.DB) func(echo.Context) error {
 	return func(c echo.Context) error {
-		var participantView ParticipantView
-		err := c.Bind(&participantView)
+		var roomRequest RoomRequest
+		err := c.Bind(&roomRequest)
 		if err != nil {
 			return c.String(http.StatusBadRequest, err.Error())
 		}
 
-		log.Printf("joinRoom: %v", participantView)
+		log.Printf("joinRoom: %v", roomRequest)
 
-		if participantView.SID == "" {
+		if roomRequest.SID == "" {
 			return c.String(http.StatusBadRequest, "SID required")
 		}
 
 		var room Room
-		db.Where("s_id=?", participantView.SID).First(&room)
-		if room.SID != participantView.SID {
+		db.Where("s_id=?", roomRequest.SID).First(&room)
+		if room.SID != roomRequest.SID {
 			return c.String(http.StatusNotFound, "")
 		}
 
