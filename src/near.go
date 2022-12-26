@@ -45,11 +45,16 @@ func getNodeURL() (string, error) {
 	}
 
 	var viewResult ViewResult
-
-	json.Unmarshal([]byte(res.Result), &viewResult)
+	err = json.Unmarshal([]byte(res.Result), &viewResult)
+	if err != nil {
+		return "", err
+	}
 
 	var getNodesResult []GetNodesResult
-	json.Unmarshal(viewResult.Result, &getNodesResult)
+	err = json.Unmarshal(viewResult.Result, &getNodesResult)
+	if err != nil {
+		return "", err
+	}
 
 	randomIndex := rand.Intn(len(getNodesResult))
 	return getNodesResult[randomIndex].Address, nil

@@ -28,6 +28,7 @@ type RoomRequest struct {
 	E2EE             bool   `json:"e2ee"`
 	ViewerPrice      string `json:"viewerPrice"`
 	ParticipantPrice string `json:"participantPrice"`
+	NoPublish        bool   `json:"noPublish"`
 }
 
 // Room model
@@ -55,13 +56,14 @@ type RoomView struct {
 
 // Token model
 type Token struct {
-	SID     string `json:"sid"`
-	UID     string `json:"uid"`
-	Name    string `json:"name"`
-	IsHost  bool   `json:"isHost"`
-	Account string `json:"account"`
-	URL     string `json:"url"`
-	CallID  string `json:"callID"`
+	SID       string `json:"sid"`
+	UID       string `json:"uid"`
+	Name      string `json:"name"`
+	IsHost    bool   `json:"isHost"`
+	Account   string `json:"account"`
+	URL       string `json:"url"`
+	CallID    string `json:"callID"`
+	NoPublish bool   `json:"noPublish"`
 }
 
 // TokenView model
@@ -106,13 +108,14 @@ func createRoom(db *gorm.DB) func(echo.Context) error {
 		}
 
 		token := &Token{
-			SID:     SID,
-			UID:     UID,
-			Name:    roomRequest.Name,
-			IsHost:  true,
-			Account: os.Getenv("NEAR_ACCOUNT"),
-			URL:     os.Getenv("CALLBACK_URL"),
-			CallID:  roomRequest.CallID,
+			SID:       SID,
+			UID:       UID,
+			Name:      roomRequest.Name,
+			IsHost:    true,
+			Account:   os.Getenv("NEAR_ACCOUNT"),
+			URL:       os.Getenv("CALLBACK_URL"),
+			CallID:    roomRequest.CallID,
+			NoPublish: false,
 		}
 
 		tokenString, signature, err := getTokenSignature(token)
@@ -181,13 +184,14 @@ func joinRoom(db *gorm.DB) func(echo.Context) error {
 		}
 
 		token := &Token{
-			SID:     roomRequest.SID,
-			UID:     UID,
-			Name:    roomRequest.Name,
-			IsHost:  false,
-			Account: os.Getenv("NEAR_ACCOUNT"),
-			URL:     os.Getenv("CALLBACK_URL"),
-			CallID:  room.CallID,
+			SID:       roomRequest.SID,
+			UID:       UID,
+			Name:      roomRequest.Name,
+			IsHost:    false,
+			Account:   os.Getenv("NEAR_ACCOUNT"),
+			URL:       os.Getenv("CALLBACK_URL"),
+			CallID:    room.CallID,
+			NoPublish: roomRequest.NoPublish,
 		}
 
 		tokenString, signature, err := getTokenSignature(token)
