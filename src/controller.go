@@ -93,7 +93,7 @@ func createRoom(db *gorm.DB) func(echo.Context) error {
 		var roomRequest RoomRequest
 		err := c.Bind(&roomRequest)
 		if err != nil {
-			return c.String(http.StatusBadRequest, "bad request")
+			return c.String(http.StatusBadRequest, err.Error())
 		}
 
 		log.Printf("createRoom: %v", roomRequest)
@@ -104,7 +104,7 @@ func createRoom(db *gorm.DB) func(echo.Context) error {
 
 		url, err := getNodeURL()
 		if err != nil {
-			return c.String(http.StatusBadRequest, "bad request")
+			return c.String(http.StatusBadRequest, err.Error())
 		}
 
 		token := &Token{
@@ -120,7 +120,7 @@ func createRoom(db *gorm.DB) func(echo.Context) error {
 
 		tokenString, signature, err := getTokenSignature(token)
 		if err != nil {
-			return c.String(http.StatusBadRequest, "bad request")
+			return c.String(http.StatusBadRequest, err.Error())
 		}
 
 		room := &Room{
@@ -180,7 +180,7 @@ func joinRoom(db *gorm.DB) func(echo.Context) error {
 		UID := shortuuid.New()
 		url, err := getNodeURL()
 		if err != nil {
-			return c.String(http.StatusBadRequest, "bad request")
+			return c.String(http.StatusBadRequest, err.Error())
 		}
 
 		token := &Token{
@@ -196,7 +196,7 @@ func joinRoom(db *gorm.DB) func(echo.Context) error {
 
 		tokenString, signature, err := getTokenSignature(token)
 		if err != nil {
-			return c.String(http.StatusBadRequest, "bad request")
+			return c.String(http.StatusBadRequest, err.Error())
 		}
 
 		participant := &Participant{
