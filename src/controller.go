@@ -283,7 +283,7 @@ func infoRoom(db *gorm.DB) func(echo.Context) error {
 		}
 
 		var participants []Participant
-		db.Where("s_id=?", room.SID).Find(&participants)
+		db.Where("s_id=? AND added_at>? AND removed_at=?", room.SID, time.Time{}, time.Time{}).Find(&participants)
 
 		var host Participant
 		db.Where("uid=?", room.HostUID).First(&host)
