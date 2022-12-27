@@ -47,6 +47,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	db.LogMode(true)
+
 	defer db.Close()
 
 	initialMigration(db)
