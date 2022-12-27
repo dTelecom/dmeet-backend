@@ -223,6 +223,7 @@ func joinRoom(db *gorm.DB) func(echo.Context) error {
 				NodeID: nodeID,
 				NodePK: nodePK,
 			}
+			db.Create(&call)
 		}
 
 		UID := shortuuid.New()
