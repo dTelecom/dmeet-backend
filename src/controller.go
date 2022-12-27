@@ -1,21 +1,26 @@
 package main
 
 import (
+	"encoding/json"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
 	"github.com/lithammer/shortuuid/v4"
 	"github.com/rs/zerolog/log"
 	"net/http"
 	"os"
+	"strconv"
+	"time"
 )
 
 // Participant model
 type Participant struct {
 	gorm.Model
-	Name   string
-	UID    string
-	SID    string
-	IsHost bool
+	Name      string
+	UID       string
+	SID       string
+	IsHost    bool
+	AddedAt   time.Time
+	RemovedAt time.Time
 }
 
 // RoomRequest model
@@ -78,6 +83,7 @@ type TokenView struct {
 type NotifyData struct {
 	Duration int    `json:"duration"`
 	SID      string `json:"sid"`
+	CallID   string `json:"callID"`
 	UID      string `json:"uid"`
 	Type     string `json:"type"`
 }
@@ -100,6 +106,7 @@ type Call struct {
 	SID    string
 	CallID string
 	NodeID string
+	NodePK string
 }
 
 func createRoom(db *gorm.DB) func(echo.Context) error {
@@ -118,7 +125,7 @@ func createRoom(db *gorm.DB) func(echo.Context) error {
 		CallID := shortuuid.New()
 		key := generateKey()
 
-		url, nodeID, err := getNodeURL()
+		url, nodeID, nodePK, err := getNodeURL()
 		if err != nil {
 			return c.String(http.StatusBadRequest, err.Error())
 		}
@@ -134,7 +141,7 @@ func createRoom(db *gorm.DB) func(echo.Context) error {
 			NoPublish: false,
 		}
 
-		tokenString, signature, err := getTokenSignature(token)
+		tokenString, signature, err := GetTokenSignature(token)
 		if err != nil {
 			return c.String(http.StatusBadRequest, err.Error())
 		}
@@ -154,6 +161,7 @@ func createRoom(db *gorm.DB) func(echo.Context) error {
 			SID:    SID,
 			CallID: CallID,
 			NodeID: nodeID,
+			NodePK: nodePK,
 		}
 		db.Create(&call)
 
@@ -199,7 +207,7 @@ func joinRoom(db *gorm.DB) func(echo.Context) error {
 			return c.String(http.StatusNotFound, "")
 		}
 
-		url, nodeID, err := getNodeURL()
+		url, nodeID, nodePK, err := getNodeURL()
 		if err != nil {
 			return c.String(http.StatusBadRequest, err.Error())
 		}
@@ -211,6 +219,7 @@ func joinRoom(db *gorm.DB) func(echo.Context) error {
 				SID:    roomRequest.SID,
 				CallID: shortuuid.New(),
 				NodeID: nodeID,
+				NodePK: nodePK,
 			}
 		}
 
@@ -227,7 +236,7 @@ func joinRoom(db *gorm.DB) func(echo.Context) error {
 			NoPublish: roomRequest.NoPublish,
 		}
 
-		tokenString, signature, err := getTokenSignature(token)
+		tokenString, signature, err := GetTokenSignature(token)
 		if err != nil {
 			return c.String(http.StatusBadRequest, err.Error())
 		}
@@ -300,21 +309,59 @@ func callbackRoom(db *gorm.DB) func(echo.Context) error {
 			return c.String(http.StatusBadRequest, err.Error())
 		}
 
-		log.Printf("callbackRoom: %v", notifyRequest)
+		var notifyData NotifyData
+		err = json.Unmarshal(notifyRequest.Data, &notifyData)
+		if err != nil {
+			return c.String(http.StatusBadRequest, err.Error())
+		}
+		log.Printf("got data: %v", notifyData)
 
-		// var room Room
-		// db.Where("s_id=?", notifyData.SID).First(&room)
-		// if room.SID != notifyData.SID {
-		// 	return c.String(http.StatusNotFound, "")
-		// }
+		var call Call
+		db.Where("call_id=?", notifyData.CallID).First(&call)
+		if call.CallID != notifyData.CallID {
+			return c.String(http.StatusNotFound, "")
+		}
 
-		// if notifyData.Type == "join" {
-		// 	var participant Participant
-		// 	db.Where("uid=?", notifyData.UID).First(&participant)
-		// 	if participant.UID != notifyData.UID {
-		// 		return c.String(http.StatusNotFound, "")
-		// 	}
-		// }
-		return c.String(http.StatusNotFound, "")
+		verified, err := VerifySignature(notifyRequest.Data, call.NodePK, notifyRequest.Signature)
+		if err != nil {
+			return c.String(http.StatusBadRequest, err.Error())
+		}
+
+		if verified != true {
+			return c.String(http.StatusBadRequest, "not verified signature")
+		}
+
+		var participant Participant
+		db.Where("uid=?", notifyData.UID).First(&participant)
+		if participant.UID != notifyData.UID {
+			return c.String(http.StatusNotFound, "")
+		}
+
+		if notifyData.Type == "join" {
+			participant.AddedAt = time.Now()
+		}
+		if notifyData.Type == "leave" {
+			participant.RemovedAt = time.Now()
+		}
+
+		db.Save(&participant)
+
+		epoch, err := getEpochHeight()
+		if err != nil {
+			return c.String(http.StatusBadRequest, err.Error())
+		}
+
+		message := notifyData.CallID + ":" + strconv.Itoa(notifyData.Duration) + ":" + strconv.Itoa(int(epoch))
+		sig, err := GetSignature([]byte(message))
+		if err != nil {
+			return c.String(http.StatusBadRequest, err.Error())
+		}
+
+		notifyResponse := NotifyResponse{
+			Signature: sig,
+			Epoch:     epoch,
+		}
+
+		return c.JSON(http.StatusOK, notifyResponse)
 	}
 }
