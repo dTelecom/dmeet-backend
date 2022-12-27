@@ -166,10 +166,12 @@ func createRoom(db *gorm.DB) func(echo.Context) error {
 		db.Create(&call)
 
 		participant := &Participant{
-			Name:   roomRequest.Name,
-			SID:    SID,
-			UID:    UID,
-			IsHost: true,
+			Name:      roomRequest.Name,
+			SID:       SID,
+			UID:       UID,
+			IsHost:    true,
+			AddedAt:   time.Time{},
+			RemovedAt: time.Time{},
 		}
 		db.Create(&participant)
 
@@ -242,10 +244,12 @@ func joinRoom(db *gorm.DB) func(echo.Context) error {
 		}
 
 		participant := &Participant{
-			Name:   roomRequest.Name,
-			SID:    roomRequest.SID,
-			UID:    UID,
-			IsHost: false,
+			Name:      roomRequest.Name,
+			SID:       roomRequest.SID,
+			UID:       UID,
+			IsHost:    false,
+			AddedAt:   time.Time{},
+			RemovedAt: time.Time{},
 		}
 		db.Create(&participant)
 
