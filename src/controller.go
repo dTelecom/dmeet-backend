@@ -51,7 +51,7 @@ type Room struct {
 type RoomView struct {
 	Title            string `json:"title"`
 	HostName         string `json:"hostName"`
-	Count            int    `json:"count"`
+	Count            int64  `json:"count"`
 	E2EE             bool   `json:"e2ee"`
 	ViewerPrice      string `json:"viewerPrice"`
 	ParticipantPrice string `json:"participantPrice"`
@@ -282,15 +282,15 @@ func infoRoom(db *gorm.DB) func(echo.Context) error {
 			return c.String(http.StatusNotFound, "")
 		}
 
-		var participants []Participant
-		db.Where("s_id=? AND added_at!=? AND removed_at=?", room.SID, time.Time{}, time.Time{}).Find(&participants)
+		var count int64
+		db.Model(&Participant{}).Where("s_id=? AND added_at!=? AND removed_at=?", room.SID, time.Time{}, time.Time{}).Count(&count)
 
 		var host Participant
 		db.Where("uid=?", room.HostUID).First(&host)
 
 		roomView := &RoomView{
 			Title:            room.Title,
-			Count:            len(participants),
+			Count:            count,
 			HostName:         host.Name,
 			E2EE:             room.E2EE,
 			ViewerPrice:      room.ViewerPrice,
