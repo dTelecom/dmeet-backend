@@ -98,6 +98,7 @@ type NotifyRequest struct {
 type NotifyResponse struct {
 	Epoch     uint64 `json:"epoch"`
 	Signature []byte `json:"signature"`
+	Duration  int    `json:"duration"`
 }
 
 // Call model
@@ -365,6 +366,7 @@ func callbackRoom(db *gorm.DB) func(echo.Context) error {
 		notifyResponse := NotifyResponse{
 			Signature: sig,
 			Epoch:     epoch,
+			Duration:  notifyData.Duration,
 		}
 
 		return c.JSON(http.StatusOK, notifyResponse)
