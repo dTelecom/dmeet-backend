@@ -23,6 +23,7 @@ func handleRequest(db *gorm.DB) {
 	e.POST("/api/room/info", infoRoom(db))
 	e.POST("/api/email/save", saveEmail(db))
 	e.GET("/api/siwe/nonce", getNonce(db))
+	e.POST("/api/siwe/verify", verifyNonce(db))
 
 	e.Logger.Fatal(e.Start(":3000"))
 }
