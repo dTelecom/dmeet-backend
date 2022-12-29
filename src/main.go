@@ -22,13 +22,14 @@ func handleRequest(db *gorm.DB) {
 	e.POST("/api/room/callback", callbackRoom(db))
 	e.POST("/api/room/info", infoRoom(db))
 	e.POST("/api/email/save", saveEmail(db))
+	e.GET("/api/siwe/nonce", getNonce(db))
 
 	e.Logger.Fatal(e.Start(":3000"))
 }
 
 func initialMigration(db *gorm.DB) {
 
-	db.AutoMigrate(&Participant{}, &Room{}, &Email{}, &Call{})
+	db.AutoMigrate(&Participant{}, &Room{}, &Email{}, &Call{}, &Nonce{})
 }
 
 func main() {
