@@ -21,6 +21,6 @@ func getNonce(db *gorm.DB) func(echo.Context) error {
 		}
 		db.Create(&nonce)
 
-		return c.String(http.StatusBadRequest, nonce.Nonce)
+		return c.String(http.StatusOK, nonce.Nonce)
 	}
 }
