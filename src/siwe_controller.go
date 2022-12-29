@@ -34,9 +34,11 @@ func verifyNonce(db *gorm.DB) func(echo.Context) error {
 
 		buf := new(bytes.Buffer)
 		buf.ReadFrom(c.Request().Body)
+		raw := buf.String()
+		log.Printf("got: %v", raw)
 
-		message, err := siwe.ParseMessage(buf.String())
-		log.Printf("got: %v %v", message, err)
+		message, err := siwe.ParseMessage(raw)
+		log.Printf("parsed: %v %v", message, err)
 		return c.String(http.StatusBadRequest, "")
 	}
 }
