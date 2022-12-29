@@ -32,6 +32,8 @@ type RoomRequest struct {
 	E2EE             bool   `json:"e2ee"`
 	ViewerPrice      string `json:"viewerPrice"`
 	ParticipantPrice string `json:"participantPrice"`
+	ViewerID         string `json:"ViewerID"`
+	ParticipantID    string `json:"ParticipantID"`
 	NoPublish        bool   `json:"noPublish"`
 }
 
@@ -45,6 +47,8 @@ type Room struct {
 	E2EE             bool
 	ViewerPrice      string
 	ParticipantPrice string
+	ViewerID         string
+	ParticipantID    string
 }
 
 // RoomView model
@@ -55,6 +59,8 @@ type RoomView struct {
 	E2EE             bool   `json:"e2ee"`
 	ViewerPrice      string `json:"viewerPrice"`
 	ParticipantPrice string `json:"participantPrice"`
+	ViewerID         string `json:"ViewerID"`
+	ParticipantID    string `json:"ParticipantID"`
 }
 
 // Token model
@@ -155,6 +161,8 @@ func createRoom(db *gorm.DB) func(echo.Context) error {
 			E2EE:             roomRequest.E2EE,
 			ViewerPrice:      roomRequest.ViewerPrice,
 			ParticipantPrice: roomRequest.ParticipantPrice,
+			ViewerID:         roomRequest.ViewerID,
+			ParticipantID:    roomRequest.ParticipantID,
 		}
 		db.Create(&room)
 
@@ -301,6 +309,8 @@ func infoRoom(db *gorm.DB) func(echo.Context) error {
 			E2EE:             room.E2EE,
 			ViewerPrice:      room.ViewerPrice,
 			ParticipantPrice: room.ParticipantPrice,
+			ViewerID:         room.ViewerID,
+			ParticipantID:    room.ParticipantID,
 		}
 
 		return c.JSON(http.StatusOK, roomView)
