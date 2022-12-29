@@ -35,6 +35,7 @@ type RoomRequest struct {
 	ViewerID         string `json:"ViewerID"`
 	ParticipantID    string `json:"ParticipantID"`
 	NoPublish        bool   `json:"noPublish"`
+	Nonce            string `json:"nonce"`
 }
 
 // Room model
@@ -127,6 +128,26 @@ func createRoom(db *gorm.DB) func(echo.Context) error {
 
 		log.Printf("createRoom: %v", roomRequest)
 
+		if roomRequest.ViewerID != "" {
+			if roomRequest.Nonce == "" {
+				return c.String(http.StatusBadRequest, "Nonce required")
+			}
+		}
+
+		if roomRequest.ParticipantID != "" {
+			if roomRequest.Nonce == "" {
+				return c.String(http.StatusBadRequest, "Nonce required")
+			}
+		}
+
+		if roomRequest.Nonce != "" {
+			var nonce Nonce
+			db.Where("nonce=?", roomRequest.Nonce).First(&nonce)
+			if nonce.Nonce != roomRequest.Nonce {
+				return c.String(http.StatusNotFound, "Nonce")
+			}
+		}
+
 		SID := shortuuid.New()
 		UID := shortuuid.New()
 		CallID := shortuuid.New()
@@ -216,6 +237,26 @@ func joinRoom(db *gorm.DB) func(echo.Context) error {
 		db.Where("s_id=?", roomRequest.SID).First(&room)
 		if room.SID != roomRequest.SID {
 			return c.String(http.StatusNotFound, "")
+		}
+
+		if room.ViewerID != "" {
+			if roomRequest.Nonce == "" {
+				return c.String(http.StatusBadRequest, "Nonce required")
+			}
+		}
+
+		if room.ParticipantID != "" {
+			if roomRequest.Nonce == "" {
+				return c.String(http.StatusBadRequest, "Nonce required")
+			}
+		}
+
+		if roomRequest.Nonce != "" {
+			var nonce Nonce
+			db.Where("nonce=?", roomRequest.Nonce).First(&nonce)
+			if nonce.Nonce != roomRequest.Nonce {
+				return c.String(http.StatusNotFound, "Nonce")
+			}
 		}
 
 		url, nodeID, nodePK, err := getNodeURL()
