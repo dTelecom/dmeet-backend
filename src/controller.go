@@ -140,12 +140,24 @@ func createRoom(db *gorm.DB) func(echo.Context) error {
 			}
 		}
 
+		var nonce Nonce
 		if roomRequest.Nonce != "" {
-			var nonce Nonce
 			db.Where("nonce=?", roomRequest.Nonce).First(&nonce)
 			if nonce.Nonce != roomRequest.Nonce {
 				return c.String(http.StatusNotFound, "Nonce")
 			}
+		}
+
+		if roomRequest.ViewerID != "" {
+			owner, err := getMembershipOwner(roomRequest.ViewerID)
+			log.Printf("Nonce %v", nonce.Address)
+			log.Printf("ViewerID %v %v", owner, err)
+		}
+
+		if roomRequest.ParticipantID != "" {
+			owner, err := getMembershipOwner(roomRequest.ParticipantID)
+			log.Printf("Nonce %v", nonce.Address)
+			log.Printf("ParticipantID %v %v", owner, err)
 		}
 
 		SID := shortuuid.New()
