@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -150,14 +151,28 @@ func createRoom(db *gorm.DB) func(echo.Context) error {
 
 		if roomRequest.ViewerID != "" {
 			owner, err := getMembershipOwner(roomRequest.ViewerID)
-			log.Printf("Nonce %v", nonce.Address)
-			log.Printf("ViewerID %v %v", owner, err)
+			if err != nil {
+				return c.String(http.StatusBadRequest, err.Error())
+			}
+
+			if strings.ToLower(nonce.Address) != strings.ToLower(owner) {
+				log.Printf("Nonce %v", nonce.Address)
+				log.Printf("ViewerID %v", owner)
+				return c.String(http.StatusNotFound, "Not owner")
+			}
 		}
 
 		if roomRequest.ParticipantID != "" {
 			owner, err := getMembershipOwner(roomRequest.ParticipantID)
-			log.Printf("Nonce %v", nonce.Address)
-			log.Printf("ParticipantID %v %v", owner, err)
+			if err != nil {
+				return c.String(http.StatusBadRequest, err.Error())
+			}
+
+			if strings.ToLower(nonce.Address) != strings.ToLower(owner) {
+				log.Printf("Nonce %v", nonce.Address)
+				log.Printf("ViewerID %v", owner)
+				return c.String(http.StatusNotFound, "Not owner")
+			}
 		}
 
 		SID := shortuuid.New()
