@@ -266,9 +266,11 @@ func joinRoom(db *gorm.DB) func(echo.Context) error {
 			return c.String(http.StatusNotFound, "")
 		}
 
-		if room.ViewerID != "" {
-			if roomRequest.Nonce == "" {
-				return c.String(http.StatusBadRequest, "Nonce required")
+		if roomRequest.NoPublish {
+			if room.ViewerID != "" {
+				if roomRequest.Nonce == "" {
+					return c.String(http.StatusBadRequest, "Nonce required")
+				}
 			}
 		}
 
@@ -278,11 +280,29 @@ func joinRoom(db *gorm.DB) func(echo.Context) error {
 			}
 		}
 
+		var nonce Nonce
 		if roomRequest.Nonce != "" {
-			var nonce Nonce
 			db.Where("nonce=?", roomRequest.Nonce).First(&nonce)
 			if nonce.Nonce != roomRequest.Nonce {
 				return c.String(http.StatusNotFound, "Nonce")
+			}
+		}
+
+		if roomRequest.NoPublish {
+			if room.ViewerID != "" {
+				balance, err := getMembershipBalance(nonce.Address, roomRequest.ViewerID)
+				if err != nil {
+					return c.String(http.StatusBadRequest, err.Error())
+				}
+				log.Printf("ViewerID %v", balance)
+			}
+		} else {
+			if room.ParticipantID != "" {
+				balance, err := getMembershipBalance(nonce.Address, roomRequest.ParticipantID)
+				if err != nil {
+					return c.String(http.StatusBadRequest, err.Error())
+				}
+				log.Printf("ParticipantID %v", balance)
 			}
 		}
 
