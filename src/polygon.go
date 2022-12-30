@@ -34,7 +34,7 @@ func getMembershipOwner(id string) (string, error) {
 	return addr.String(), nil
 }
 
-func getMembershipBalance(id string, account string) (string, error) {
+func getMembershipBalance(account string, id string) (string, error) {
 
 	i, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
