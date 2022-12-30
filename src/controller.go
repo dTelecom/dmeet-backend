@@ -32,8 +32,8 @@ type RoomRequest struct {
 	E2EE             bool   `json:"e2ee"`
 	ViewerPrice      string `json:"viewerPrice"`
 	ParticipantPrice string `json:"participantPrice"`
-	ViewerID         string `json:"ViewerID"`
-	ParticipantID    string `json:"ParticipantID"`
+	ViewerID         string `json:"viewerID"`
+	ParticipantID    string `json:"participantID"`
 	NoPublish        bool   `json:"noPublish"`
 	Nonce            string `json:"nonce"`
 }
