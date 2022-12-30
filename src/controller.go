@@ -158,7 +158,7 @@ func createRoom(db *gorm.DB) func(echo.Context) error {
 			if strings.ToLower(nonce.Address) != strings.ToLower(owner) {
 				log.Printf("Nonce %v", nonce.Address)
 				log.Printf("ViewerID %v", owner)
-				return c.String(http.StatusNotFound, "Not owner")
+				return c.String(http.StatusBadRequest, "Not owner")
 			}
 		}
 
@@ -171,7 +171,7 @@ func createRoom(db *gorm.DB) func(echo.Context) error {
 			if strings.ToLower(nonce.Address) != strings.ToLower(owner) {
 				log.Printf("Nonce %v", nonce.Address)
 				log.Printf("ViewerID %v", owner)
-				return c.String(http.StatusNotFound, "Not owner")
+				return c.String(http.StatusBadRequest, "Not owner")
 			}
 		}
 
@@ -294,7 +294,10 @@ func joinRoom(db *gorm.DB) func(echo.Context) error {
 				if err != nil {
 					return c.String(http.StatusBadRequest, err.Error())
 				}
-				log.Printf("ViewerID %v", balance)
+				if balance != "1" {
+					log.Printf("ViewerID %v", balance)
+					return c.String(http.StatusBadRequest, "No balance")
+				}
 			}
 		} else {
 			if room.ParticipantID != "" {
@@ -302,7 +305,10 @@ func joinRoom(db *gorm.DB) func(echo.Context) error {
 				if err != nil {
 					return c.String(http.StatusBadRequest, err.Error())
 				}
-				log.Printf("ParticipantID %v", balance)
+				if balance != "1" {
+					log.Printf("ParticipantID %v", balance)
+					return c.String(http.StatusBadRequest, "No balance")
+				}
 			}
 		}
 
