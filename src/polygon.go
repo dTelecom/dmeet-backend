@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/rs/zerolog/log"
 	"main/dmeet"
 	"math/big"
 	"os"
@@ -31,6 +32,8 @@ func getMembershipOwner(id string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	log.Printf("getMembershipOwner %v %v", i, addr)
+
 	return addr.String(), nil
 }
 
@@ -56,6 +59,8 @@ func getMembershipBalance(account string, id string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
+	log.Printf("getMembershipBalance %v %v %v", account, i, balance)
 
 	return balance.String(), nil
 }
