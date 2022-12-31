@@ -290,7 +290,7 @@ func joinRoom(db *gorm.DB) func(echo.Context) error {
 
 		if roomRequest.NoPublish {
 			if room.ViewerID != "" {
-				balance, err := getMembershipBalance(nonce.Address, roomRequest.ViewerID)
+				balance, err := getMembershipBalance(nonce.Address, room.ViewerID)
 				if err != nil {
 					return c.String(http.StatusBadRequest, err.Error())
 				}
@@ -301,7 +301,7 @@ func joinRoom(db *gorm.DB) func(echo.Context) error {
 			}
 		} else {
 			if room.ParticipantID != "" {
-				balance, err := getMembershipBalance(nonce.Address, roomRequest.ParticipantID)
+				balance, err := getMembershipBalance(nonce.Address, room.ParticipantID)
 				if err != nil {
 					return c.String(http.StatusBadRequest, err.Error())
 				}
