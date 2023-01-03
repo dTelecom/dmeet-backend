@@ -411,6 +411,55 @@ func infoRoom(db *gorm.DB) func(echo.Context) error {
 	}
 }
 
+func verifyCreateRoom(db *gorm.DB) func(echo.Context) error {
+	return func(c echo.Context) error {
+
+		var roomRequest RoomRequest
+		err := c.Bind(&roomRequest)
+		if err != nil {
+			return c.String(http.StatusBadRequest, err.Error())
+		}
+
+		log.Printf("verifyCreateRoom: %v", roomRequest)
+
+		var nonce Nonce
+		if roomRequest.Nonce != "" {
+			db.Where("nonce=?", roomRequest.Nonce).First(&nonce)
+			if nonce.Nonce != roomRequest.Nonce {
+				return c.String(http.StatusNotFound, "Nonce")
+			}
+		}
+
+		if roomRequest.ViewerID != "" {
+			owner, err := getMembershipOwner(roomRequest.ViewerID)
+			if err != nil {
+				return c.String(http.StatusBadRequest, err.Error())
+			}
+
+			if strings.ToLower(nonce.Address) != strings.ToLower(owner) {
+				log.Printf("Nonce %v", nonce.Address)
+				log.Printf("ViewerID %v", owner)
+				return c.String(http.StatusBadRequest, "Not owner")
+			}
+		}
+
+		if roomRequest.ParticipantID != "" {
+			owner, err := getMembershipOwner(roomRequest.ParticipantID)
+			if err != nil {
+				return c.String(http.StatusBadRequest, err.Error())
+			}
+
+			if strings.ToLower(nonce.Address) != strings.ToLower(owner) {
+				log.Printf("Nonce %v", nonce.Address)
+				log.Printf("ViewerID %v", owner)
+				return c.String(http.StatusBadRequest, "Not owner")
+			}
+		}
+
+		return c.String(http.StatusOK, "")
+	}
+}
+
 func callbackRoom(db *gorm.DB) func(echo.Context) error {
 	return func(c echo.Context) error {
 		var notifyRequest NotifyRequest
