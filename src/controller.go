@@ -460,6 +460,77 @@ func verifyCreateRoom(db *gorm.DB) func(echo.Context) error {
 	}
 }
 
+func verifyJoinRoom(db *gorm.DB) func(echo.Context) error {
+	return func(c echo.Context) error {
+
+		var roomRequest RoomRequest
+		err := c.Bind(&roomRequest)
+		if err != nil {
+			return c.String(http.StatusBadRequest, err.Error())
+		}
+
+		log.Printf("verifyJoinRoom: %v", roomRequest)
+
+		if roomRequest.SID == "" {
+			return c.String(http.StatusBadRequest, "SID required")
+		}
+
+		var room Room
+		db.Where("s_id=?", roomRequest.SID).First(&room)
+		if room.SID != roomRequest.SID {
+			return c.String(http.StatusNotFound, "")
+		}
+
+		if roomRequest.NoPublish {
+			if room.ViewerID != "" {
+				if roomRequest.Nonce == "" {
+					return c.String(http.StatusBadRequest, "Nonce required")
+				}
+			}
+		}
+
+		if room.ParticipantID != "" {
+			if roomRequest.Nonce == "" {
+				return c.String(http.StatusBadRequest, "Nonce required")
+			}
+		}
+
+		var nonce Nonce
+		if roomRequest.Nonce != "" {
+			db.Where("nonce=?", roomRequest.Nonce).First(&nonce)
+			if nonce.Nonce != roomRequest.Nonce {
+				return c.String(http.StatusNotFound, "Nonce")
+			}
+		}
+
+		if roomRequest.NoPublish {
+			if room.ViewerID != "" {
+				balance, err := getMembershipBalance(nonce.Address, room.ViewerID)
+				if err != nil {
+					return c.String(http.StatusBadRequest, err.Error())
+				}
+				if balance != "1" {
+					log.Printf("ViewerID %v", balance)
+					return c.String(http.StatusBadRequest, "No balance")
+				}
+			}
+		} else {
+			if room.ParticipantID != "" {
+				balance, err := getMembershipBalance(nonce.Address, room.ParticipantID)
+				if err != nil {
+					return c.String(http.StatusBadRequest, err.Error())
+				}
+				if balance != "1" {
+					log.Printf("ParticipantID %v", balance)
+					return c.String(http.StatusBadRequest, "No balance")
+				}
+			}
+		}
+
+		return c.String(http.StatusOK, "")
+	}
+}
+
 func callbackRoom(db *gorm.DB) func(echo.Context) error {
 	return func(c echo.Context) error {
 		var notifyRequest NotifyRequest
