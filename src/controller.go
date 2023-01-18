@@ -180,7 +180,7 @@ func createRoom(db *gorm.DB) func(echo.Context) error {
 		CallID := shortuuid.New()
 		key := generateKey()
 
-		url, nodeID, nodePK, err := getNodeURL()
+		url, nodeID, nodePK, err := getNodeURL(false)
 		if err != nil {
 			return c.String(http.StatusBadRequest, err.Error())
 		}
@@ -312,7 +312,7 @@ func joinRoom(db *gorm.DB) func(echo.Context) error {
 			}
 		}
 
-		url, nodeID, nodePK, err := getNodeURL()
+		url, nodeID, nodePK, err := getNodeURL(roomRequest.NoPublish)
 		if err != nil {
 			return c.String(http.StatusBadRequest, err.Error())
 		}

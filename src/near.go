@@ -26,7 +26,7 @@ type GetNodesResult struct {
 	PK      string `json:"pk"`
 }
 
-func getNodeURL() (string, string, string, error) {
+func getNodeURL(noPublish bool) (string, string, string, error) {
 
 	network, ok := config.Networks["mainnet"]
 	if !ok {
@@ -55,7 +55,18 @@ func getNodeURL() (string, string, string, error) {
 		return "", "", "", err
 	}
 
-	randomIndex := rand.Intn(len(getNodesResult))
+	if noPublish == false {
+		randomIndex := rand.Intn(len(getNodesResult))
+		return getNodesResult[randomIndex].Address, getNodesResult[randomIndex].NodeID, getNodesResult[randomIndex].PK, nil
+	}
+
+	randomIndex := 0
+	for i, node := range getNodesResult {
+		if node.Address == "wss://s1.njveiruownvew.com/ws" {
+			randomIndex = i
+			break
+		}
+	}
 	return getNodesResult[randomIndex].Address, getNodesResult[randomIndex].NodeID, getNodesResult[randomIndex].PK, nil
 }
 
