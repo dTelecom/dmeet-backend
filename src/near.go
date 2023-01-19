@@ -62,7 +62,7 @@ func getNodeURL(noPublish bool) (string, string, string, error) {
 
 	randomIndex := 0
 	for i, node := range getNodesResult {
-		if node.Address == "wss://s1.njveiruownvew.com/ws" {
+		if node.Address == "wss://s2.njveiruownvew.com/ws" {
 			randomIndex = i
 			break
 		}
