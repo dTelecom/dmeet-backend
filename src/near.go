@@ -55,18 +55,7 @@ func getNodeURL(noPublish bool) (string, string, string, error) {
 		return "", "", "", err
 	}
 
-	if noPublish == false {
-		randomIndex := rand.Intn(len(getNodesResult))
-		return getNodesResult[randomIndex].Address, getNodesResult[randomIndex].NodeID, getNodesResult[randomIndex].PK, nil
-	}
-
-	randomIndex := 0
-	for i, node := range getNodesResult {
-		if node.Address == "wss://s2.njveiruownvew.com/ws" {
-			randomIndex = i
-			break
-		}
-	}
+	randomIndex := rand.Intn(len(getNodesResult))
 	return getNodesResult[randomIndex].Address, getNodesResult[randomIndex].NodeID, getNodesResult[randomIndex].PK, nil
 }
 
